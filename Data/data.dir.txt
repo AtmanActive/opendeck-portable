@@ -1,0 +1,1 @@
+opendeck-portable will keep all your opendeck personal configuration here
