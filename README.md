@@ -31,4 +31,4 @@ Now when you navigate into %userprofile%\Downloads\unpack\PFiles\OpenDeck, you'l
 
 
 ## How to make opendeck-portable autostart with windows
-Use any of the portsble launcher apps available. We recommend [SKWire Splat](https://www.dcmembers.com/skwire/download/splat/).
+Use any of the portable launcher apps available. We recommend [SKWire Splat](https://www.dcmembers.com/skwire/download/splat/).
