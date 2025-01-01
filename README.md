@@ -2,11 +2,18 @@
 Windows wrapper exe to run [OpenDeck](https://github.com/ninjadev64/OpenDeck) in portable mode.
 
 
-## Why
+## Purpose
 Allows you to run OpenDeck from anywhere, including brand new windows that has nothing installed. Also allows you to store several different versions, to be tested in A/B mode or to run on different computers. You can find more portable apps [here](https://portapps.io), [here](https://portableapps.com) and [here](https://www.portablefreeware.com).
 
 
-## How to use
+## Principle
+opendeck-portable doesn't care about the path where it is running from. 
+It will run from any path. It is inteligent enough to discover it's path on runtime. 
+OpenDeck, on the other hand, requires it's data store to reside in the windows appdata pre-defined folder. 
+So, by using opendeck-portable.exe, all your config data will be copied from it's self-contained, dynamically-discovered folder into windows appdata well-known folder, just prior to launching the real opendeck.exe. Then, opendeck-portable.exe will wait for opendeck.exe to finish, and will copy all the data back in reverse. To ensure your portable data is NOT tied to windows logged-in user username, opendeck-portable.exe will wrap/unwrap all paths mentioned in all .json files that do reference windows appdata folder.
+
+
+## How to merge OpenDeck into this (first time setup)
 Copy/move/unpack "opendeck.exe" and the folder "plugins" to opendeck-portable's subfolder titled "App".
 Going forward, never execute "opendeck.exe" directly, but always execute "opendeck-portable.exe" instead.
 
