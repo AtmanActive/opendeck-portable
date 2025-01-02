@@ -32,3 +32,8 @@ Now when you navigate into %userprofile%\Downloads\unpack\PFiles\OpenDeck, you'l
 
 ## How to make opendeck-portable autostart with windows
 Use any of the portable launcher apps available. We recommend [SKWire Splat](https://www.dcmembers.com/skwire/download/splat/).
+
+
+
+## How to make opendeck-portable work in stealth mode
+Edit the included opendeck-portable. ini file and set Stealth to 1.
