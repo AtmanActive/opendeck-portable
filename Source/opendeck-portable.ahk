@@ -5,8 +5,8 @@
 #NoTrayIcon
 
 ; opendeck-portable
-; version 1.0.0
-; by AtmanActive 2024
+; version 1.0.1
+; by AtmanActive 2024, 2025
 ; https://github.com/AtmanActive/opendeck-portable
 
 A_FileEncoding := "UTF-8-RAW"
@@ -21,23 +21,35 @@ my_exe_path := A_ScriptDir
 my_portable_data_path := my_exe_path
 my_portable_exe_path  := my_exe_path
 my_portable_exe_wdir  := my_exe_path
+my_portable_ini_path  := my_exe_path
 
 if ( A_IsCompiled )
 {
 	my_portable_data_path := my_exe_path "\Data"
 	my_portable_exe_path  := my_exe_path "\App\opendeck.exe"
 	my_portable_exe_wdir  := my_exe_path "\App"
+	my_portable_ini_path  := my_exe_path "\opendeck-portable.ini"
 }
 else
 {
 	my_portable_data_path := SubStr( my_exe_path, 1, InStr( my_exe_path, "\", , -1 ) - 1 ) "\Data"
 	my_portable_exe_path  := SubStr( my_exe_path, 1, InStr( my_exe_path, "\", , -1 ) - 1 ) "\App\opendeck.exe"
 	my_portable_exe_wdir  := SubStr( my_exe_path, 1, InStr( my_exe_path, "\", , -1 ) - 1 ) "\App"
+	my_portable_ini_path  := SubStr( my_exe_path, 1, InStr( my_exe_path, "\", , -1 ) - 1 ) "\opendeck-portable.ini"
 }
 
 win_user_appdata_roaming_path := A_AppData "\opendeck"
 win_user_appdata_roaming_double := ConvertToDoubleBackslash( win_user_appdata_roaming_path )
 win_user_appdata_roam_placeholder := "<win_user_appdata_roam_placeholder>"
+
+LocalAppData := EnvGet( "LocalAppData" )
+win_user_appdata_local_path := LocalAppData "\opendeck"
+
+
+
+ini_do_use_stealth  := IniRead( my_portable_ini_path, "Settings", "Stealth", 0 )
+ini_do_use_pathwrap := IniRead( my_portable_ini_path, "Settings", "Pathwrap", 1 )
+
 
 
 ; FileAppend "`n", "**", "`n"
@@ -289,8 +301,26 @@ if ( ! FileExist( my_portable_exe_path ) )
 
 
 
-SyncFolders( my_portable_data_path, win_user_appdata_roaming_path, 1, 1 )
+SyncFolders( my_portable_data_path "\Roaming", win_user_appdata_roaming_path, 1, 1 ) ; we'll always try to unwrap just in case there is any string <win_user_appdata_roam_placeholder> left in our conf files (could be old version or something) - no harm for future versions
+SyncFolders( my_portable_data_path "\Local",   win_user_appdata_local_path,   0, 1 )
 
 ExitCode := RunWait( my_portable_exe_path " --hide", my_portable_exe_wdir )
 
-SyncFolders( win_user_appdata_roaming_path, my_portable_data_path, 2, 1 )
+
+do_use_pathwrap := 2
+if ( ! ini_do_use_pathwrap )
+{
+	do_use_pathwrap := 0
+}
+
+SyncFolders( win_user_appdata_roaming_path, my_portable_data_path "\Roaming", do_use_pathwrap, 1 ) ; we'll wrap unless ini setting tells us not to (for OpenDeck v2.4.0+)
+SyncFolders( win_user_appdata_local_path,   my_portable_data_path "\Local",   0, 1 )
+
+
+
+if ( ini_do_use_stealth )
+{
+	; leave no trace on the host
+	DirDelete win_user_appdata_roaming_path, true
+	DirDelete win_user_appdata_local_path,   true
+}
