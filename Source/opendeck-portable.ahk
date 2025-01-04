@@ -5,7 +5,7 @@
 #NoTrayIcon
 
 ; opendeck-portable
-; version 1.0.1
+; version 1.0.2
 ; by AtmanActive 2024, 2025
 ; https://github.com/AtmanActive/opendeck-portable
 
@@ -274,6 +274,56 @@ do_portable_unwrap_a_file( src_file_path, dst_file_path )
 
 
 
+
+
+do_change_registry_to_prevent_autolaunch()
+{
+	
+	reg_key := "HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+	reg_val := "OpenDeck"
+	
+	TestRegValue := RegRead( reg_key, reg_val, 0 )
+	
+	if ( TestRegValue != 0 )
+  {
+		RegDelete reg_key, reg_val
+	}
+	
+} ; END do_change_registry_to_prevent_autolaunch()
+
+
+
+
+
+
+
+
+
+do_change_settings_to_prevent_autolaunch( src_file_path )
+{
+	
+	src_file_time := FileGetTime( src_file_path )
+	
+	src_file_contents := FileRead( src_file_path )
+	
+	src_file_replaced := StrReplace( src_file_contents, '"autolaunch": true', '"autolaunch": false' )
+	
+	if ( src_file_contents != src_file_replaced )
+	{
+		FileDelete src_file_path
+		FileAppend src_file_replaced, src_file_path
+		FileSetTime src_file_time, src_file_path  ; Preserve timestamp
+	}
+	
+	src_file_contents := "" ; Free the memory.
+	src_file_replaced := "" ; Free the memory.
+	
+} ; END do_change_settings_to_prevent_autolaunch( src_file_path )
+
+
+
+
+
 ; Function to convert path with single backslashes to double backslashes
 ConvertToDoubleBackslash( path ) 
 {
@@ -301,9 +351,21 @@ if ( ! FileExist( my_portable_exe_path ) )
 
 
 
+
+
+; RUN
+
+; we have to delete OpenDeck's autolaunch registry entry since we want it to be run by opendeck-portable exclusively
+do_change_registry_to_prevent_autolaunch()
+do_change_settings_to_prevent_autolaunch( my_portable_data_path "\Roaming\settings.json" )
+
+; sync files (if any) from our portable data store to windows appdata well known paths
 SyncFolders( my_portable_data_path "\Roaming", win_user_appdata_roaming_path, 1, 1 ) ; we'll always try to unwrap just in case there is any string <win_user_appdata_roam_placeholder> left in our conf files (could be old version or something) - no harm for future versions
 SyncFolders( my_portable_data_path "\Local",   win_user_appdata_local_path,   0, 1 )
 
+
+
+; LAUNCH OpenDeck
 ExitCode := RunWait( my_portable_exe_path " --hide", my_portable_exe_wdir )
 
 
@@ -313,11 +375,17 @@ if ( ! ini_do_use_pathwrap )
 	do_use_pathwrap := 0
 }
 
+do_change_settings_to_prevent_autolaunch( win_user_appdata_roaming_path "\settings.json" )
+
+; sync files from windows appdata well known paths to our portable data store
 SyncFolders( win_user_appdata_roaming_path, my_portable_data_path "\Roaming", do_use_pathwrap, 1 ) ; we'll wrap unless ini setting tells us not to (for OpenDeck v2.4.0+)
 SyncFolders( win_user_appdata_local_path,   my_portable_data_path "\Local",   0, 1 )
 
+; we have to delete OpenDeck's autolaunch registry entry since we want it to be run by opendeck-portable exclusively
+do_change_registry_to_prevent_autolaunch()
 
 
+; stealth mode anyone?
 if ( ini_do_use_stealth )
 {
 	; leave no trace on the host
