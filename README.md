@@ -13,7 +13,7 @@ OpenDeck, on the other hand, requires it's data store to reside in the windows a
 So, by using opendeck-portable.exe, all your config data will be copied from it's self-contained, dynamically-discovered folder into windows appdata well-known folder, just prior to launching the real opendeck.exe. Then, opendeck-portable.exe will wait for opendeck.exe to finish, and will copy all the data back in reverse. To ensure your portable data is NOT tied to windows logged-in user username, opendeck-portable.exe will wrap/unwrap all paths mentioned in all .json files that do reference windows appdata folder.
 
 ## Usage
-Just download the latest release, unzip to a folder of your choice, and run opendeck-portable.exe
+Just download the [latest release](https://github.com/AtmanActive/opendeck-portable/releases), unzip to a folder of your choice, and run opendeck-portable.exe
 
 
 ## How to merge OpenDeck into this if needed (for the first time setup from blank or for an upgrade)
