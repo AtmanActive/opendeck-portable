@@ -10,7 +10,9 @@ Allows you to run OpenDeck from anywhere, including brand new windows that has n
 opendeck-portable doesn't care about the path where it is running from. 
 It will run from any path. It is inteligent enough to discover it's path on runtime. 
 OpenDeck, on the other hand, requires it's data store to reside in the windows appdata pre-defined folder. 
-So, by using opendeck-portable.exe, all your config data will be copied from it's self-contained, dynamically-discovered folder into windows appdata well-known folder, just prior to launching the real opendeck.exe. Then, opendeck-portable.exe will wait for opendeck.exe to finish, and will copy all the data back in reverse. To ensure your portable data is NOT tied to windows logged-in user username, opendeck-portable.exe will wrap/unwrap all paths mentioned in all .json files that do reference windows appdata folder.
+So, by using opendeck-portable.exe, all your config data will be copied from it's self-contained, dynamically-discovered folder into windows appdata well-known folder, just prior to launching the real opendeck.exe. Then, opendeck-portable.exe will wait for opendeck.exe to finish, and will copy all the data back in reverse.  
+~~To ensure your portable data is NOT tied to windows logged-in user username, opendeck-portable.exe will wrap/unwrap all paths mentioned in all .json files that do reference windows appdata folder.~~  
+As of version 2.4.0, OpenDeck is now writing the paths in relative form, so this path translation is no longer needed.
 
 ## Usage
 Just download the [latest release](https://github.com/AtmanActive/opendeck-portable/releases), unzip to a folder of your choice, and run opendeck-portable.exe
