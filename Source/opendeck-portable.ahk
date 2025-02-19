@@ -5,7 +5,7 @@
 #NoTrayIcon
 
 ; opendeck-portable
-; version 1.0.2
+; version 1.0.3
 ; by AtmanActive 2024, 2025
 ; https://github.com/AtmanActive/opendeck-portable
 
@@ -143,7 +143,14 @@ SyncFolders( sourceDir, targetDir, pre_or_post_flight, overwrite := true )
 do_process_file( src_file_path, dst_file_path, pre_or_post_flight, src_file_name )
 {
 	
-	src_file_time := FileGetTime( src_file_path )
+	try  ; Attempts to execute code.
+	{
+		src_file_time := FileGetTime( src_file_path )
+	}
+	catch as e  ; Handles the first error thrown by the block above.
+	{
+		MsgBox "An error was thrown while trying FileGetTime on " src_file_path "`n`nSpecifically: " e.Message
+	}
 	
 	split_filename_array := StrSplit( src_file_name, "." )
 	
