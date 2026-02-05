@@ -5,8 +5,8 @@
 #NoTrayIcon
 
 ; opendeck-portable
-; version 1.0.3
-; by AtmanActive 2024, 2025
+; version 1.0.5
+; by AtmanActive 2024, 2025, 2026
 ; https://github.com/AtmanActive/opendeck-portable
 
 A_FileEncoding := "UTF-8-RAW"
@@ -66,9 +66,16 @@ g_postflight_sync_done := 0
 
 
 
-SyncFolders( sourceDir, targetDir, pre_or_post_flight, overwrite := true ) 
+SyncFolders( sourceDir, targetDir, pre_or_post_flight, overwrite := true )
 {
-	
+
+	; if the source directory doesn't exist, there is nothing to sync
+	; this happens on a fresh install where neither portable Data nor AppData folders exist yet
+	if ( ! DirExist( sourceDir ) )
+	{
+		return
+	}
+
 	; Ensure paths end with backslash
 	;sourceDir := RTrim( sourceDir, "\" ) "\"
 	;targetDir := RTrim( targetDir, "\" ) "\"
@@ -314,7 +321,14 @@ do_change_registry_to_prevent_autolaunch()
 
 do_change_settings_to_prevent_autolaunch( src_file_path )
 {
-	
+
+	; if the settings file doesn't exist yet, there is nothing to change
+	; this happens on a fresh install where OpenDeck has never been run before
+	if ( ! FileExist( src_file_path ) )
+	{
+		return
+	}
+
 	src_file_time := FileGetTime( src_file_path )
 	
 	src_file_contents := FileRead( src_file_path )
