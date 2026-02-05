@@ -362,6 +362,12 @@ ConvertToDoubleBackslash( path )
 
 do_postflight_sync()
 {
+	global g_postflight_sync_done
+	global ini_do_use_pathwrap
+	global ini_do_use_stealth
+	global win_user_appdata_roaming_path
+	global win_user_appdata_local_path
+	global my_portable_data_path
 
 	; GUARD: prevent double-execution of the post-flight sync
 	; this can happen if the normal flow completes the sync AND THEN the script exits, triggering OnExit again
@@ -413,6 +419,7 @@ do_postflight_sync()
 
 handle_script_exit( ExitReason, ExitCode )
 {
+	global g_opendeck_was_launched
 
 	; only run the post-flight sync if OpenDeck was actually launched by us
 	; if the script exits before launching (e.g. due to pre-launch checks), we must not sync
