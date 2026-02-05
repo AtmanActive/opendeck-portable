@@ -42,3 +42,6 @@ Use any of the portable launcher apps available. We recommend [SKWire Splat](htt
 
 ## How to make opendeck-portable work in stealth mode
 Edit the included opendeck-portable. ini file and set Stealth to 1.
+When Stealth is set to 0, then opendeck-portable won't remove the files from windows appdata folder, it will just copy the data.
+When Stealth is set to 1, then opendeck-portable will move the files from windows appdata folder on exit, leaving no trace behind.
+
