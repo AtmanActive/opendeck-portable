@@ -51,6 +51,12 @@ ini_do_use_stealth  := IniRead( my_portable_ini_path, "Settings", "Stealth", 0 )
 ini_do_use_pathwrap := IniRead( my_portable_ini_path, "Settings", "Pathwrap", 1 )
 
 
+; GLOBAL STATE FLAGS
+; tracks whether OpenDeck has been launched by us (used by the OnExit handler to know if post-flight sync is needed)
+g_opendeck_was_launched := 0
+; tracks whether post-flight sync has already been performed (used to prevent double-execution)
+g_postflight_sync_done := 0
+
 
 ; FileAppend "`n", "**", "`n"
 ; FileAppend my_portable_data_path "`n", "**", "`n"
@@ -332,10 +338,83 @@ do_change_settings_to_prevent_autolaunch( src_file_path )
 
 
 ; Function to convert path with single backslashes to double backslashes
-ConvertToDoubleBackslash( path ) 
+ConvertToDoubleBackslash( path )
 {
 	return StrReplace( path, "\", "\\" )
 }
+
+
+
+
+do_postflight_sync()
+{
+
+	; GUARD: prevent double-execution of the post-flight sync
+	; this can happen if the normal flow completes the sync AND THEN the script exits, triggering OnExit again
+	if ( g_postflight_sync_done )
+	{
+		return
+	}
+	g_postflight_sync_done := 1
+
+
+	; if opendeck.exe is still running (e.g. during Windows shutdown), we need to terminate it first
+	; otherwise we can't reliably sync files that OpenDeck may still be writing to
+	PID_running := ProcessExist( "opendeck.exe" )
+	if ( PID_running > 0 )
+	{
+		ProcessClose( PID_running )
+		; give opendeck.exe a moment to fully terminate before we start syncing
+		ProcessWaitClose( "opendeck.exe", 5 )
+	}
+
+
+	do_use_pathwrap := 2
+	if ( ! ini_do_use_pathwrap )
+	{
+		do_use_pathwrap := 0
+	}
+
+	do_change_settings_to_prevent_autolaunch( win_user_appdata_roaming_path "\settings.json" )
+
+	; sync files from windows appdata well known paths to our portable data store
+	SyncFolders( win_user_appdata_roaming_path, my_portable_data_path "\Roaming", do_use_pathwrap, 1 ) ; we'll wrap unless ini setting tells us not to (for OpenDeck v2.4.0+)
+	SyncFolders( win_user_appdata_local_path,   my_portable_data_path "\Local",   0, 1 )
+
+	; we have to delete OpenDeck's autolaunch registry entry since we want it to be run by opendeck-portable exclusively
+	do_change_registry_to_prevent_autolaunch()
+
+
+	; stealth mode anyone?
+	if ( ini_do_use_stealth )
+	{
+		; leave no trace on the host
+		DirDelete win_user_appdata_roaming_path, true
+		DirDelete win_user_appdata_local_path,   true
+	}
+
+} ; END do_postflight_sync()
+
+
+
+handle_script_exit( ExitReason, ExitCode )
+{
+
+	; only run the post-flight sync if OpenDeck was actually launched by us
+	; if the script exits before launching (e.g. due to pre-launch checks), we must not sync
+	if ( ! g_opendeck_was_launched )
+	{
+		return 0 ; allow exit, do nothing
+	}
+
+	; run the post-flight sync
+	; the double-execution guard inside do_postflight_sync() ensures this is safe to call
+	; even if the sync already ran in the normal flow
+	do_postflight_sync()
+
+	return 0 ; allow exit to proceed
+
+} ; END handle_script_exit( ExitReason, ExitCode )
 
 
 
@@ -360,6 +439,13 @@ if ( ! FileExist( my_portable_exe_path ) )
 
 
 
+; REGISTER EXIT HANDLER
+; this ensures post-flight sync runs even if the script is terminated by Windows shutdown/logoff
+; without this, RunWait would never return during shutdown and the user's changes would be lost
+OnExit( handle_script_exit )
+
+
+
 ; RUN
 
 ; we have to delete OpenDeck's autolaunch registry entry since we want it to be run by opendeck-portable exclusively
@@ -372,30 +458,13 @@ SyncFolders( my_portable_data_path "\Local",   win_user_appdata_local_path,   0,
 
 
 
+; mark that OpenDeck has been launched (this tells the OnExit handler that post-flight sync is needed)
+g_opendeck_was_launched := 1
+
 ; LAUNCH OpenDeck
 ExitCode := RunWait( my_portable_exe_path " --hide", my_portable_exe_wdir )
 
 
-do_use_pathwrap := 2
-if ( ! ini_do_use_pathwrap )
-{
-	do_use_pathwrap := 0
-}
-
-do_change_settings_to_prevent_autolaunch( win_user_appdata_roaming_path "\settings.json" )
-
-; sync files from windows appdata well known paths to our portable data store
-SyncFolders( win_user_appdata_roaming_path, my_portable_data_path "\Roaming", do_use_pathwrap, 1 ) ; we'll wrap unless ini setting tells us not to (for OpenDeck v2.4.0+)
-SyncFolders( win_user_appdata_local_path,   my_portable_data_path "\Local",   0, 1 )
-
-; we have to delete OpenDeck's autolaunch registry entry since we want it to be run by opendeck-portable exclusively
-do_change_registry_to_prevent_autolaunch()
-
-
-; stealth mode anyone?
-if ( ini_do_use_stealth )
-{
-	; leave no trace on the host
-	DirDelete win_user_appdata_roaming_path, true
-	DirDelete win_user_appdata_local_path,   true
-}
+; NORMAL EXIT PATH: OpenDeck was closed by the user
+; the post-flight sync function handles everything including the double-execution guard
+do_postflight_sync()
